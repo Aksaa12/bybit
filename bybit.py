@@ -179,6 +179,6 @@ class ByBitGameBot:
                     self.play_game()  # Play rounds based on scoring method
                     time.sleep(random.randint(4, 8))  # Random delay between rounds
 
-if _name_ == "_main_":
+if _name_ == "__main__":
     bot = ByBitGameBot()
     bot.run()
