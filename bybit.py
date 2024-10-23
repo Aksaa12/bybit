@@ -30,7 +30,7 @@ def calculate_value(input_str):
     return sum(ord(char) for char in input_str) / 1e5
 
 class ByBitGameBot:
-    def _init_(self):
+    def __init__(self):
         self.session = requests.Session()
         self.base_url = "https://api.bybitcoinsweeper.com/api"
         self.headers = {
