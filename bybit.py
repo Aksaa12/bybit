@@ -44,6 +44,7 @@ class ByBitGameBot:
         self.max_game_time = 10  # Default value
         self.min_game_time = 5    # Default value
         self.always_win = False    # Default value
+        self.current_init_data = None  # Store current init data
         self.load_configuration()
 
     def load_configuration(self):
@@ -87,6 +88,7 @@ class ByBitGameBot:
         return {}
 
     def refresh_token(self):
+        """Refresh the token by re-logging in using the current init data."""
         self.log_message("Refreshing Token", "INFO")
         return self.login(self.current_init_data)  # Re-login with the same init_data
 
