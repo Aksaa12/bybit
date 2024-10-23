@@ -142,6 +142,63 @@ class ByBitGameBot:
             self.log_message("Too Many Requests", "ERROR")
             self.pause(60)
 
+    def play_game(self):
+        """Method to handle playing the game with alternating win/loss."""
+        for _ in range(3):
+            try:
+                if self.always_win:  # Check if always_win is set
+                    self.execute_win()
+                else:  # Random mode
+                    is_win = random.random() < 0.8  # 80% chance of winning
+                    if is_win:
+                        self.execute_win()
+                    else:
+                        self.execute_loss()
+            except Exception as e:
+                self.log_message("Error in scoring", str(e), "ERROR")
+        return True
+
+    def execute_loss(self):
+        """Method for executing a loss game, similar to the execute_win logic."""
+        try:
+            game_time = random.randint(self.min_game_time, self.max_game_time)
+            playgame = self.session.post(f"{self.base_url}/games/start", json={}, headers=self.headers).json()
+            if "message" in playgame and "expired" in playgame["message"]:
+                self.log_message("Token Expired", "Refreshing Token...", "ERROR")
+                if not self.refresh_token():
+                    sys.exit(0)
+                return  # Retry after refreshing token
+
+            gameid = playgame["id"]
+            rewarddata = playgame["rewards"]
+            started_at = playgame["createdAt"]
+            userdata = self.fetch_user_info()
+            balance = userdata.get('score', 0) + userdata.get('scoreFromReferrals', 0)
+            self.log_message("Balance", str(balance), "INFO")
+            unix_time_started = datetime.strptime(started_at, '%Y-%m-%dT%H:%M:%S.%fZ')
+            unix_time_started = unix_time_started.replace(tzinfo=pytz.UTC)
+            self.log_message("Start Game", "Success!", "INFO")
+            self.pause(game_time)
+
+            game_data = {
+                "bagCoins": rewarddata["bagCoins"],
+                "bits": rewarddata["bits"],
+                "gifts": rewarddata["gifts"],
+                "gameId": gameid
+            }
+            res = self.session.post(f'{self.base_url}/games/lose', json=game_data, headers=self.headers)
+            if res.status_code == 201:
+                self.log_message("Update Status", "YOU LOSE", "ERROR")
+            elif res.status_code == 401:
+                self.log_message("Token Expired", "Refreshing Token...", "ERROR")
+                if not self.refresh_token():
+                    sys.exit(0)
+                return  # Retry after refreshing token
+            self.pause(5)
+        except requests.RequestException:
+            self.log_message("Too Many Requests", "ERROR")
+            self.pause(60)
+
     def login(self, init_data):
         try:
             self.headers["tl-init-data"] = init_data
